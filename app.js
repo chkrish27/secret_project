@@ -58,21 +58,22 @@ app.post("/register",async(req,res)=>{
 
 app.post("/login", async (req, res) => {
     const userName = req.body.username;
-    const password = bcrypt.hash(req.body.password,saltRounds);
-    try {
-      const foundUser = await User.findOne({ email: userName });
-      if (foundUser) {
-        if (foundUser.password === password) {
-          res.render("secrets");
-        } else {
-          res.send("Incorrect password.");
-        }
-      } else {
-        res.send("Match not found.");
-      }
-    } catch (error) {
-      res.send(error);
-    }
+    bcrypt.hash(req.body.password,saltRounds,function(err,password){
+        try {
+            const foundUser = User.findOne({ email: userName });
+            if (foundUser) {
+              if (foundUser.password === password) {
+                res.render("secrets");
+              } else {
+                res.send("Incorrect password.");
+              }
+            } else {
+              res.send("Match not found.");
+            }
+          } catch (error) {
+            res.send(error);
+          }
+    });
   });
 
 app.listen(3000,function(){
