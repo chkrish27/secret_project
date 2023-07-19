@@ -42,16 +42,18 @@ app.get("/register",async(req,res)=>{
 });
 
 app.post("/register",async(req,res)=>{
-   const hashed= bcrypt.hash(req.body.password,saltRounds);
-    const newUser=new User({
-      email:req.body.username,
-      password:hashed
+    bcrypt.hash(req.body.password,saltRounds,function(err,hash){
+        const newUser=new User({
+            email:req.body.username,
+            password:hash
+          });
+          newUser.save().then(result => {
+              res.render("secrets");
+            }).catch(error => {
+              console.log(error);
+            });
     });
-    newUser.save().then(result => {
-        res.render("secrets");
-      }).catch(error => {
-        console.log(error);
-      });
+    
 });
 
 app.post("/login", async (req, res) => {
