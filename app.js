@@ -34,10 +34,16 @@ const userSchema=new mongoose.Schema({
     password:String
 });
 
+userSchema.plugin(passportLocalMongoose);
 
 const User= new mongoose.model("User",userSchema);
 
-userSchema.plugin(passportLocalMongoose);
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+
 
 
 app.get("/",async(req,res)=>{
