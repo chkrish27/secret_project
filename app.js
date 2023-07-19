@@ -54,7 +54,7 @@ app.post("/register",async(req,res)=>{
 
 app.post("/login", async (req, res) => {
     const userName = req.body.username;
-    const password = req.body.password;
+    const password = md5(req.body.password);
     try {
       const foundUser = await User.findOne({ email: userName });
       if (foundUser) {
