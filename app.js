@@ -35,7 +35,8 @@ async function main() {
 const userSchema=new mongoose.Schema({
     email:String,
     password:String,
-    googleId:String
+    googleId:String,
+    secret:String
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -113,16 +114,37 @@ app.get('/logout', function(req, res, next) {
     });
   });
 
-app.get("/secrets",async(req,res)=>{
-    if(req.isAuthenticated()){
-    res.render("secrets");
-    }
-    else
-    {
-        res.redirect("/login");
+app.get("/secrets", async (req, res) => {
+    const foundUsers = await User.find({ "secret": { $ne: null } });
+
+    if (foundUsers.length > 0) {
+        res.render("secrets", { usersWithSecrets: foundUsers });
+    } else {
+        res.send("No users have secrets");
     }
 });
 
+app.get("/submit",async(req,res)=>{
+    if(req.isAuthenticated()){
+        res.render("submit");
+        }
+        else
+        {
+            res.redirect("/login");
+        }
+});
+
+app.post("/submit", async (req, res) => {
+    const submittedSecret = req.body.secret;
+    const foundUser = await User.findById(req.user.id);
+    if (foundUser) {
+        foundUser.secret = submittedSecret;
+        await foundUser.save();
+        res.redirect("/secrets");
+    } else {
+        res.send("User not found");
+    }
+});
 app.post("/register",async(req,res)=>{
    User.register({username: req.body.username},req.body.password,function(err,user)
    {
