@@ -59,6 +59,13 @@ app.get("/register",async(req,res)=>{
     res.render("register");
 });
 
+app.get('/logout', function(req, res, next) {
+    req.logout(function(err) {
+      if (err) { return next(err); }
+      res.redirect('/');
+    });
+  });
+
 app.get("/secrets",async(req,res)=>{
     if(req.isAuthenticated()){
     res.render("secrets");
