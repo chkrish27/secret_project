@@ -59,6 +59,16 @@ app.get("/register",async(req,res)=>{
     res.render("register");
 });
 
+app.get("/secrets",async(req,res)=>{
+    if(req.isAuthenticated()){
+    res.render("secrets");
+    }
+    else
+    {
+        res.redirect("/login");
+    }
+});
+
 app.post("/register",async(req,res)=>{
    User.register({username: req.body.username},req.body.password,function(err,user)
    {
