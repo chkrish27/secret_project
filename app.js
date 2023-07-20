@@ -7,7 +7,7 @@ const session = require('express-session');
 const passport= require('passport');
 const passportLocalMongoose=require('passport-local-mongoose');
 const LocalStrategy=require('passport-local').Strategy;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const GoogleStrategy = require('passport-google-oauth2').Strategy;
 const findOrCreate=require("mongoose-findorcreate");
 
 const app=express();
@@ -34,7 +34,8 @@ async function main() {
 
 const userSchema=new mongoose.Schema({
     email:String,
-    password:String
+    password:String,
+    googleId:String
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -44,25 +45,58 @@ const User= new mongoose.model("User",userSchema);
 
 passport.use(new LocalStrategy(User.authenticate()));
 
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+passport.serializeUser(function(user,done){
+    done(null,user.id);
+});
+passport.deserializeUser(function(id,done){
+    User.findById(id).then(user => {
+        done(null, user);
+    }).catch(error => {
+        done(error);
+    });
+});
 
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/google/secrets",
-    userProfileURL:"https://www.googleapis.com/oauth2/v3/userinfo"
+    scope:
+    [ 'https://www.googleapis.com/auth/userinfo.profile',' https://www.googleapis.com/auth/userinfo.email' ],
+    passReqToCallback:true
   },
-  function(accessToken, refreshToken, profile, cb) {
+  function(request, accessToken, refreshToken, profile, done) {
     User.findOrCreate({ googleId: profile.id }, function (err, user) {
-      return cb(err, user);
-    });
+        return done(err, user);
+      });
   }
 ));
 
 app.get("/",async(req,res)=>{
     res.render("home");
 });
+
+app.get('/auth/google' , passport.authenticate('google', { scope:
+    [ 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email' ]
+}));
+  
+// Auth Callback
+app.get( '/auth/google/secrets',
+    passport.authenticate( 'google', {
+        failureRedirect: '/login'}),function(req,res){
+            res.redirect("/secrets");
+        }
+);
+
+// app.get('/auth/callback/success' , (req , res) => {
+//     if(!req.user)
+//         res.redirect('/auth/callback/failure');
+//     res.redirect('secrets');    
+// });
+  
+// failure
+app.get('/auth/callback/failure' , (req , res) => {
+    res.send("Error");
+})
 
 app.get("/login",async(req,res)=>{
     res.render("login");
